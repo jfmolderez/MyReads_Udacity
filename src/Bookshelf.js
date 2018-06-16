@@ -12,7 +12,6 @@ const bookshelf = (props) => {
     					key={book.id}
     					title={book.title}
     					authors={book.authors}
-    					imageLinks={book.imageLinks}
     					imageLink={book.imageLinks.thumbnail} />
     			))}
 			</ol>
