@@ -1,7 +1,9 @@
 import React from 'react';
+import Option from './Option';
 
 const book = (props) => {
-  const { title, authors, imageLink } = props;
+  const { title, authors, imageLink, shelf } = props;
+  const options = ["Move to...", "Currently Reading", "Want to Read", "Read", "None"];
   return (
   	<li>
   	<div className="book">
@@ -10,11 +12,13 @@ const book = (props) => {
   			</div>
   			<div className="book-shelf-changer">
             	<select>
-                	<option value="move" disabled>Move to...</option>
-                    <option value="currentlyReading">Currently Reading</option>
-                    <option value="wantToRead">Want to Read</option>
-                    <option value="read">Read</option>
-                    <option value="none">None</option>
+					{ options.map((option, index) => (
+						<Option
+							key={index}
+							optionValue={shelf}
+							optionText={option}/>		
+						))
+					}
                  </select>
              </div>
  		 </div>
