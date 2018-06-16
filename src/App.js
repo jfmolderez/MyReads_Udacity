@@ -12,17 +12,21 @@ class BooksApp extends React.Component {
      * pages, as well as provide a good URL they can bookmark and share.
      */
     showSearchPage: false,
-    want: [],
-    current: [],
-    read: []
+    books : []
   }
-/*
+
   componentDidMount() {
     BooksAPI.getAll()
     	.then((books) => {
-    		const bookRecords = books.map((book) => 
-    			{id: book.id, authors: book.authors, title: book.title, imageLink: book.imageLinks.thumbnail};
-	*/		
+    		const bs = [];
+    		for (const book of books) {
+    			const { id, authors, title, imageLinks, shelf } = book ; // Destructuring
+				const b = { id, authors, title, imageLinks, shelf };  // Object literal shorthand
+				bs.push(b);
+  			}
+			this.setState({books: bs});
+		})
+	}	
 				
 
   render() {
@@ -56,6 +60,7 @@ class BooksApp extends React.Component {
             </div>
             <div className="list-books-content">
               <div>
+          
                 <div className="bookshelf">
                   <h2 className="bookshelf-title">Currently Reading</h2>
                   <div className="bookshelf-books">
@@ -99,6 +104,7 @@ class BooksApp extends React.Component {
                     </ol>
                   </div>
                 </div>
+          
                 <div className="bookshelf">
                   <h2 className="bookshelf-title">Want to Read</h2>
                   <div className="bookshelf-books">
@@ -142,6 +148,7 @@ class BooksApp extends React.Component {
                     </ol>
                   </div>
                 </div>
+          
                 <div className="bookshelf">
                   <h2 className="bookshelf-title">Read</h2>
                   <div className="bookshelf-books">
@@ -202,7 +209,10 @@ class BooksApp extends React.Component {
                       </li>
                     </ol>
                   </div>
-                </div>
+                </div> 
+          
+          
+          
               </div>
             </div>
             <div className="open-search">
