@@ -10,10 +10,12 @@ const bookshelf = (props) => {
     			{props.books.map((book) => (
     				<Book
     					key={book.id}
+    					bookId={book.id}
     					title={book.title}
     					authors={book.authors}
     					imageLink={book.imageLinks.thumbnail} 
-    					shelf={book.shelf}/>
+    					shelf={book.shelf}
+    					moveTo={props.moveTo}/>
     			))}
 			</ol>
 		</div>

@@ -13,26 +13,53 @@ class BooksApp extends React.Component {
      * pages, as well as provide a good URL they can bookmark and share.
      */
     showSearchPage: false,
-    books : []
+    currentlyReading : [],
+    wantToRead : [],
+    read : []
+  }
+
+  onChangeShelf = (from, to, id) => {
+    console.log('from : ', from, ' to : ', to);
+    //console.log(this.state[from]);
+    const fromBooks = [...this.state[from]]  
+    const movingBook = (fromBooks.filter((book) => book.id === id))[0];
+    movingBook.shelf = to;
+    const updatedFromBooks = fromBooks.filter((book) => book.id !== id);
+    if (to !== "none") {
+    	const toBooks = [...this.state[to]]  
+    	const updatedToBooks = [...toBooks, movingBook];  // moving references !!!!
+    	this.setState({[from]: updatedFromBooks, [to]: updatedToBooks});
+  	} else {
+    	this.setState({[from]: updatedFromBooks});
+    }
   }
 
   componentDidMount() {
     BooksAPI.getAll()
     	.then((books) => {
-    		const bs = [];
+    		const currentlyReading = [];
+    		const wantToRead = [];
+    		const read = [];
     		for (const book of books) {
     			const { id, authors, title, imageLinks, shelf } = book ; // Destructuring
 				const b = { id, authors, title, imageLinks, shelf };  // Object literal shorthand
-				bs.push(b);
+				switch(shelf) {
+                  case "wantToRead" :
+                  	wantToRead.push(b);
+                  	break;
+                  case "currentlyReading" :
+                  	currentlyReading.push(b);
+                  	break;
+                  case "read" :
+                  	read.push(b);
+                  	break;
+                  default:
+                  	console.log("App.js : should nevre each here!!!");
+                }
   			}
-			this.setState({books: bs});
+			this.setState({wantToRead, currentlyReading, read});
 		})
 	}
-
-	booksInShelf = (category) => {
-      return this.state.books.filter((book) => book.shelf === category) 
-    } ;
-				
 
   render() {
     return (
@@ -67,13 +94,16 @@ class BooksApp extends React.Component {
               <div>
           		<Bookshelf
           			category='Currently Reading'
-          			books={this.booksInShelf("currentlyReading")} />    
+          			moveTo={this.onChangeShelf}
+          			books={this.state.currentlyReading}/>   
 				<Bookshelf
 					category='Want To Read'
-					books={this.booksInShelf("wantToRead")} />
+					moveTo={this.onChangeShelf}
+					books={this.state.wantToRead} />
 				<Bookshelf
 					category='Read'
-					books={this.booksInShelf("read")} />
+					moveTo={this.onChangeShelf}
+					books={this.state.read} />
               </div>
             </div>
             <div className="open-search">
