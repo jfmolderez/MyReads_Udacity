@@ -8,32 +8,12 @@ import { Route } from 'react-router-dom'
 // ids = ["nggnmAEACAAJ", "sJf1vQAACAAJ", "evuwdDLfAyYC", "74XNzF_al3MC", "jAUODAAAQBAJ", "IOejDAAAQBAJ", "1wy49i-gQjIC"]
 class BooksApp extends React.Component {
   state = {
-    /**
-     * TODO: Instead of using this state variable to keep track of which page
-     * we're on, use the URL in the browser's address bar. This will ensure that
-     * users can use the browser's back and forward buttons to navigate between
-     * pages, as well as provide a good URL they can bookmark and share.
-     */
+    none : [],
     currentlyReading : [],
     wantToRead : [],
-    read : []
-  }
-
-  onChangeShelf = (from, to, id) => {
-    console.log('from : ', from, ' to : ', to);
-    //console.log(this.state[from]);
-    const fromBooks = [...this.state[from]]  
-    const movingBook = (fromBooks.filter((book) => book.id === id))[0];
-    movingBook.shelf = to;
-    const updatedFromBooks = fromBooks.filter((book) => book.id !== id);
-    if (to !== "none") {
-    	const toBooks = [...this.state[to]]  
-    	const updatedToBooks = [...toBooks, movingBook];  // moving references !!!!
-    	this.setState({[from]: updatedFromBooks, [to]: updatedToBooks});
-  	} else {
-    	this.setState({[from]: updatedFromBooks});
-    }
-    BooksAPI.update(movingBook, to);
+    read : [],
+    searchResults : [], 
+    query : ''
   }
 
   componentDidMount() {
@@ -56,17 +36,65 @@ class BooksApp extends React.Component {
                   	read.push(b);
                   	break;
                   default:
-                  	console.log("App.js : should nevre each here!!!");
+                  	console.log("App.js - componentDidMount: should never reach here!!!");
                 }
   			}
 			this.setState({wantToRead, currentlyReading, read});
 		})
 	}
 
+  onChangeShelf = (from, to, id) => {
+    console.log('from : ', from, ' to : ', to);
+    const fromBooks = [...this.state[from]]  
+    const movingBook = (fromBooks.filter((book) => book.id === id))[0];
+    movingBook.shelf = to;
+    const updatedFromBooks = fromBooks.filter((book) => book.id !== id);
+    const toBooks = [...this.state[to]]  
+    const updatedToBooks = [...toBooks, movingBook];  // moving references !!!!
+    this.setState({[from]: updatedFromBooks, [to]: updatedToBooks});
+
+    BooksAPI.update(movingBook, to);
+  }
+
+  updateQuery = (query) => {
+    if (query.trim() === '') {
+      this.setState({searchResults: [], query: ''})
+    } else {
+      console.log(query);
+      this.setState(() => ({query: query}));
+      this.searchBooks()
+    }
+  }
+
+  searchBooks = () => {
+  	BooksAPI.search(this.state.query)
+    	.then((books) => {
+      		const results = [];
+      		const newBooks = [];
+      		for (const book of books) {
+              if (!book.shelf) {
+                book.shelf="none";
+                newBooks.push(book);
+                BooksAPI.update(book, "none");
+              }
+              results.push(book);
+            }
+      		this.setState({searchResults:results, none:newBooks });
+        }).catch(
+      		() => { 
+              console.log("unfulfilled promise - BooksAPI.search"); 
+              this.setState({searchResults:[]});    
+            }
+      	);
+  }
+    
+
+
   render() {
+        
     return (
       <div className="app">
-        <Route exact path="/search" render={() => (
+        <Route path="/search" render={() => (
           <div className="search-books">
             <div className="search-books-bar">
     		  <Link to='/' className="close-search"> Close </Link> 
@@ -79,16 +107,23 @@ class BooksApp extends React.Component {
                   However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
                   you don't find a specific author or title. Every search is limited by search terms.
                 */}
-                <input type="text" placeholder="Search by title or author"/>
+                <input 
+					type="text" 
+					placeholder="Search by title or author"
+					value={this.state.query}
+					onChange={(event) => this.updateQuery(event.target.value)}/>
 
               </div>
             </div>
             <div className="search-books-results">
-              <ol className="books-grid"></ol>
+              <Bookshelf
+				category='Search Results'
+				moveTo={this.onChangeShelf}
+				books={this.state.searchResults}/>
             </div>
           </div>
         )} />
-		<Route path="/" render={() => (
+		<Route exact path="/" render={() => (
           <div className="list-books">
             <div className="list-books-title">
               <h1>MyReads</h1>

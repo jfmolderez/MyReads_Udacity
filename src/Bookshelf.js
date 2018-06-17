@@ -12,8 +12,8 @@ const bookshelf = (props) => {
     					key={book.id}
     					bookId={book.id}
     					title={book.title}
-    					authors={book.authors}
-    					imageLink={book.imageLinks.thumbnail} 
+    					authors={book.authors?book.authors:''}
+    					imageLink={book.imageLinks?book.imageLinks.thumbnail:''} 
     					shelf={book.shelf}
     					moveTo={props.moveTo}/>
     			))}
