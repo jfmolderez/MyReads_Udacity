@@ -2,12 +2,15 @@ import React from 'react'
 import Book from './Book'
 
 const bookshelf = (props) => {
+  console.log(props.books);
   return (
     <div className="bookshelf">
-    	<h2 className="bookshelf-title">{props.category}</h2>
+    	<h2 className="bookshelf-title"> {props.header} </h2>
     	<div className="bookshelf-books">
     		<ol className="books-grid">
-    			{props.books.map((book) => (
+    			{props.books
+    				.filter((book) => props.shelf(book.shelf))
+    				.map((book) => (
     				<Book
     					key={book.id}
     					bookId={book.id}
@@ -15,7 +18,7 @@ const bookshelf = (props) => {
     					authors={book.authors?book.authors:''}
     					imageLink={book.imageLinks?book.imageLinks.thumbnail:''} 
     					shelf={book.shelf}
-    					moveTo={props.moveTo}/>
+    					onChangeShelf={props.onChangeShelf}/>
     			))}
 			</ol>
 		</div>

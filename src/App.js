@@ -5,81 +5,49 @@ import Bookshelf from './Bookshelf'
 import { Link } from 'react-router-dom'
 import { Route } from 'react-router-dom'
 
-// ids = ["nggnmAEACAAJ", "sJf1vQAACAAJ", "evuwdDLfAyYC", "74XNzF_al3MC", "jAUODAAAQBAJ", "IOejDAAAQBAJ", "1wy49i-gQjIC"]
 class BooksApp extends React.Component {
   state = {
-    none : [],
-    currentlyReading : [],
-    wantToRead : [],
-    read : [],
+	booksOnShelves: [],
     searchResults : [], 
     query : ''
   }
 
   componentDidMount() {
+    const booksOnShelves = [];
     BooksAPI.getAll()
     	.then((books) => {
-    		const currentlyReading = [];
-    		const wantToRead = [];
-    		const read = [];
     		for (const book of books) {
-    			const { id, authors, title, imageLinks, shelf } = book ; // Destructuring
-				const b = { id, authors, title, imageLinks, shelf };  // Object literal shorthand
-				switch(shelf) {
-                  case "wantToRead" :
-                  	wantToRead.push(b);
-                  	break;
-                  case "currentlyReading" :
-                  	currentlyReading.push(b);
-                  	break;
-                  case "read" :
-                  	read.push(b);
-                  	break;
-                  default:
-                  	console.log("App.js - componentDidMount: should never reach here!!!");
-                }
+				booksOnShelves.push(book);
   			}
-			this.setState({wantToRead, currentlyReading, read});
+			this.setState({booksOnShelves});
 		})
 	}
 
-  onChangeShelf = (from, to, id) => {
-    console.log('from : ', from, ' to : ', to);
-    const fromBooks = [...this.state[from]]  
-    const movingBook = (fromBooks.filter((book) => book.id === id))[0];
-    movingBook.shelf = to;
-    const updatedFromBooks = fromBooks.filter((book) => book.id !== id);
-    const toBooks = [...this.state[to]]  
-    const updatedToBooks = [...toBooks, movingBook];  // moving references !!!!
-    this.setState({[from]: updatedFromBooks, [to]: updatedToBooks});
-
-    BooksAPI.update(movingBook, to);
+  changeShelf = (id, to) => {
+    const booksOnShelves = [...this.state.booksOnShelves]
+    let [movingBook] = booksOnShelves.filter((book) => id === book.id)
+    if (movingBook) { // book is on a shelf !!!
+      movingBook.shelf = to
+      this.setState({booksOnShelves})
+    }
+    BooksAPI.update(movingBook, to)
   }
+      
 
   updateQuery = (query) => {
+    this.setState(() => ({query: query}));
     if (query.trim() === '') {
-      this.setState({searchResults: [], query: ''})
+      this.setState({searchResults: []})
     } else {
-      console.log(query);
-      this.setState(() => ({query: query}));
-      this.searchBooks()
+      if (this.state.query.length > 0)
+      	this.searchBooks(this.state.query)
     }
   }
 
-  searchBooks = () => {
-  	BooksAPI.search(this.state.query)
+  searchBooks(query) {
+  	BooksAPI.search(query)
     	.then((books) => {
-      		const results = [];
-      		const newBooks = [];
-      		for (const book of books) {
-              if (!book.shelf) {
-                book.shelf="none";
-                newBooks.push(book);
-                BooksAPI.update(book, "none");
-              }
-              results.push(book);
-            }
-      		this.setState({searchResults:results, none:newBooks });
+			this.setState({searchResults: books})
         }).catch(
       		() => { 
               console.log("unfulfilled promise - BooksAPI.search"); 
@@ -87,13 +55,17 @@ class BooksApp extends React.Component {
             }
       	);
   }
-    
-
 
   render() {
-        
+   	const shelves = {
+    	currentlyReading: ['Currently Reading', 'currentlyReading'],
+    	wantToRead: ['Want to Read', 'wantToRead'],
+    	read: ['Read', 'read']
+  	}   
+
     return (
       <div className="app">
+      
         <Route path="/search" render={() => (
           <div className="search-books">
             <div className="search-books-bar">
@@ -112,37 +84,34 @@ class BooksApp extends React.Component {
 					placeholder="Search by title or author"
 					value={this.state.query}
 					onChange={(event) => this.updateQuery(event.target.value)}/>
-
               </div>
             </div>
             <div className="search-books-results">
               <Bookshelf
-				category='Search Results'
+				header='Search Results'
+				shelf={(s) => true}
 				moveTo={this.onChangeShelf}
 				books={this.state.searchResults}/>
             </div>
           </div>
         )} />
+
 		<Route exact path="/" render={() => (
           <div className="list-books">
             <div className="list-books-title">
               <h1>MyReads</h1>
             </div>
             <div className="list-books-content">
-              <div>
-          		<Bookshelf
-          			category='Currently Reading'
-          			moveTo={this.onChangeShelf}
-          			books={this.state.currentlyReading}/>   
-				<Bookshelf
-					category='Want To Read'
-					moveTo={this.onChangeShelf}
-					books={this.state.wantToRead} />
-				<Bookshelf
-					category='Read'
-					moveTo={this.onChangeShelf}
-					books={this.state.read} />
-              </div>
+                <div>
+                	{Object.keys(shelves).map((shelf) =>
+                		<Bookshelf 
+                        	key={shelf}
+                            header={shelves[shelf][0]}
+        					shelf={(s) => s === shelves[shelf][1]}
+        					books={ this.state.booksOnShelves }
+        					onChangeShelf={ this.changeShelf }/>
+					)}
+				</div>
             </div>
             <div className="open-search">
           	  <Link to='/search'> Add a book </Link> 
