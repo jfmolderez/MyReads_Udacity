@@ -9,7 +9,8 @@ class BooksApp extends React.Component {
   state = {
 	booksOnShelves: [],
     searchResults : [], 
-    query : ''
+    query : '',
+    headerSearchResults : 'Search Results'
   }
 
   componentDidMount() {
@@ -24,19 +25,23 @@ class BooksApp extends React.Component {
 	}
 
   changeShelf = (id, to) => {
-    const booksOnShelves = [...this.state.booksOnShelves]
-    let [movingBook] = booksOnShelves.filter((book) => id === book.id)
-    if (movingBook) { // book is on a shelf !!!
-      movingBook.shelf = to
-      this.setState({booksOnShelves})
+    let booksOnShelves = [...this.state.booksOnShelves];
+    let [movingBook] = booksOnShelves.filter((book) => id === book.id);
+    
+    if (!movingBook) { // book is not on a shelf !!!
+      const searchResults = [...this.state.searchResults];
+      [movingBook] = searchResults.filter((book) => id === book.id);
+      booksOnShelves = [...booksOnShelves, movingBook]
     }
+    movingBook.shelf = to
+    this.setState({booksOnShelves})
     BooksAPI.update(movingBook, to)
   }
       
 
   updateQuery = (query) => {
     this.setState(() => ({query: query}));
-    if (query.trim() === '') {
+    if (query === '') {
       this.setState({searchResults: []})
     } else {
       if (this.state.query.length > 0)
@@ -45,13 +50,26 @@ class BooksApp extends React.Component {
   }
 
   searchBooks(query) {
+    const searchResults = []
   	BooksAPI.search(query)
     	.then((books) => {
-			this.setState({searchResults: books})
+    		for (const book of books) {
+    			const [bookOnShelf] = this.state.booksOnShelves.filter((b) => b.id === book.id)
+    			if (bookOnShelf) {
+    			  searchResults.push(bookOnShelf)
+ 				} else {
+                  book.shelf = "none"
+                  searchResults.push(book)
+                }
+			}
+			this.setState({searchResults, headerSearchResults: "Search Results"})
         }).catch(
       		() => { 
               console.log("unfulfilled promise - BooksAPI.search"); 
-              this.setState({searchResults:[]});    
+              this.setState({searchResults:[]});
+              if (query.length > 1) {
+                this.setState({headerSearchResults: "No Books Found"})
+              }
             }
       	);
   }
@@ -83,14 +101,16 @@ class BooksApp extends React.Component {
 					type="text" 
 					placeholder="Search by title or author"
 					value={this.state.query}
-					onChange={(event) => this.updateQuery(event.target.value)}/>
+					onChange={(event) =>  {this.updateQuery(event.target.value);
+                                           event.preventDefault();
+                                          }}/>
               </div>
             </div>
             <div className="search-books-results">
               <Bookshelf
-				header='Search Results'
+				header={this.state.headerSearchResults}
 				shelf={(s) => true}
-				moveTo={this.onChangeShelf}
+				onChangeShelf={this.changeShelf}
 				books={this.state.searchResults}/>
             </div>
           </div>
@@ -124,3 +144,4 @@ class BooksApp extends React.Component {
 }
 
 export default BooksApp
+
